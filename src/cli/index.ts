@@ -1,5 +1,8 @@
 import { Command } from "commander";
+import * as path from "path";
 import { crawlForm } from "../discover/crawler";
+import { buildWorkflowConfig } from "../discover/schema-builder";
+import { writeWorkflowYaml } from "../discover/yaml-writer";
 
 const program = new Command();
 
@@ -17,8 +20,18 @@ program
   .option("--overwrite", "Overwrite existing workflow file", false)
   .option("--merge", "Merge new fields into existing workflow file", false)
   .action(async (opts: { url: string; out: string; headed: boolean; overwrite: boolean; merge: boolean }) => {
-    const result = await crawlForm(opts.url, { headed: opts.headed });
-    console.log(JSON.stringify(result, null, 2));
+    const crawled = await crawlForm(opts.url, { headed: opts.headed });
+
+    // Derive workflow name from output path filename (without extension)
+    const name = path.basename(opts.out, path.extname(opts.out));
+    const config = buildWorkflowConfig(crawled, name);
+
+    await writeWorkflowYaml(config, opts.out, {
+      overwrite: opts.overwrite,
+      merge: opts.merge,
+    });
+
+    console.log(`Wrote ${opts.out} (${crawled.fields.length} fields, discovered: ${config.discovered})`);
   });
 
 program
