@@ -1,0 +1,35 @@
+{
+  "name": "interview-llm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node ./src/_internal/run.ts",
+    "server": "ts-node ./src/api/serve.ts",
+    "trigger": "ts-node ./src/api/trigger.ts",
+    "cron": "ts-node ./src/api/cron.ts",
+    "test:scenarios": "ts-node ./src/tests/runner.ts",
+    "form-api": "ts-node src/cli/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.14.0",
+    "@types/node-cron": "^3.0.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^1.2.19",
+    "ai": "^4.3.2",
+    "commander": "^14.0.3",
+    "dotenv-defaults": "^5.0.2",
+    "express": "^5.2.1",
+    "node-cron": "^4.2.1",
+    "playwright": "^1.51.1",
+    "yaml": "^2.8.3",
+    "zod": "^3.25.76"
+  }
+}
