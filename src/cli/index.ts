@@ -1,8 +1,10 @@
+import "dotenv-defaults/config";
 import { Command } from "commander";
 import * as path from "path";
 import { crawlForm } from "../discover/crawler";
 import { buildWorkflowConfig } from "../discover/schema-builder";
 import { writeWorkflowYaml } from "../discover/yaml-writer";
+import { createServer } from "../api/server";
 
 const program = new Command();
 
@@ -39,9 +41,9 @@ program
   .description("Start the form-api HTTP server")
   .option("--port <n>", "Port to listen on", "3000")
   .option("--workflows <dir>", "Directory containing workflow YAML files", "./workflows")
-  .action(() => {
-    console.log("not yet implemented");
-    process.exit(0);
+  .action((opts: { port: string; workflows: string }) => {
+    process.env.PORT = opts.port;
+    createServer(opts.workflows);
   });
 
 program
