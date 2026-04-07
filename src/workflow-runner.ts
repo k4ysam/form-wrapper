@@ -1,10 +1,12 @@
 import * as path from "path";
+import { Page } from "playwright";
 import { createSession } from "./session";
 import { runOrchestrator } from "./orchestration";
 import { loadWorkflow } from "./workflow-loader/loader";
 import { adaptToWorkflowInput } from "./workflow-loader/adapter";
 import { WorkflowRunResult } from "./api/queue";
 import { WorkflowInput } from "./workflow/types";
+import { WorkflowConfig } from "./workflow-loader/types";
 import { AuditLogger } from "./logger";
 import { loadCookies } from "./auth/cookie-store";
 import { detectStaleSelectors, StaleField } from "./discover/stale-detector";
@@ -12,13 +14,36 @@ import { detectStaleSelectors, StaleField } from "./discover/stale-detector";
 const WORKFLOWS_DIR = process.env.WORKFLOWS_DIR ?? "./workflows";
 
 /**
+ * After the orchestrator fills fields, dispatch any configured JS events
+ * (e.g. change, blur) for fields that declare dispatch_events in their YAML.
+ * This satisfies React/Vue controlled inputs and JS-driven form validation.
+ */
+async function dispatchFieldEvents(page: Page, config: WorkflowConfig): Promise<void> {
+  for (const section of config.sections) {
+    if (!section.fields) continue;
+    for (const field of section.fields) {
+      if (!field.dispatch_events || field.dispatch_events.length === 0) continue;
+      for (const eventName of field.dispatch_events) {
+        try {
+          await page.dispatchEvent(field.selector, eventName);
+        } catch {
+          // Best-effort — selector may not exist or field may be hidden
+        }
+      }
+    }
+  }
+}
+
+/**
  * Runs a workflow end-to-end:
  *   1. Load + validate the workflow YAML
  *   2. Adapt request body into WorkflowInput via template resolution
- *   3. Open browser, navigate to form URL
- *   4. Run the 3-tier orchestrator
- *   5. Optionally check success_selector for result extraction
- *   6. Return a WorkflowRunResult
+ *   3. Open browser, inject cookies if auth.strategy === 'cookie_jar'
+ *   4. Stale detection — warn on dead selectors, continue regardless
+ *   5. Run the 3-tier orchestrator
+ *   6. Dispatch post-fill JS events (dispatch_events per field)
+ *   7. Check success_selector for result extraction
+ *   8. Return a WorkflowRunResult
  */
 export async function runWorkflow(
   workflowName: string,
@@ -56,7 +81,6 @@ export async function runWorkflow(
     }, config.auth.csrf_selector);
     if (csrfToken) {
       logger.record("workflow-runner", "auth:csrf_read", { workflowName });
-      // Token available for injection into submit — stored in adaptedInput extension point
       (adaptedInput as Record<string, unknown>)["_csrfToken"] = csrfToken;
     }
   }
@@ -77,6 +101,9 @@ export async function runWorkflow(
     const summary = await runOrchestrator(page, adaptedInput);
     logger.record("workflow-runner", "workflow:complete", { workflowName, runId, summary });
 
+    // Dispatch post-fill JS events for fields with dispatch_events configured
+    await dispatchFieldEvents(page, config);
+
     // Check success_selector from the submit section if defined
     const submitSection = config.sections.find((s) => s.type === "submit");
     const successSelector = submitSection?.success_selector;
@@ -90,7 +117,6 @@ export async function runWorkflow(
         message = (await page.locator(successSelector).first().textContent()) ?? summary;
         status = "success";
       } else {
-        // Heuristic: URL changed after submit = likely success
         const currentUrl = page.url();
         if (currentUrl !== config.url) {
           status = "success";
@@ -120,6 +146,7 @@ export async function runWorkflow(
       message: (err as Error).message,
       tiersUsed: [],
       durationMs: Date.now() - start,
+      staleFields: staleFields.length > 0 ? staleFields : undefined,
     };
   } finally {
     await context.browser()?.close();
