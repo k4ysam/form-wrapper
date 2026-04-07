@@ -3,7 +3,9 @@ import * as path from "path";
 import { Express, Request, Response } from "express";
 import { loadWorkflow } from "../workflow-loader/loader";
 import { validateRequestBody } from "../workflow-loader/validator";
+import { adaptToWorkflowInput } from "../workflow-loader/adapter";
 import { WorkflowConfig } from "../workflow-loader/types";
+import { enqueueWorkflow } from "./queue";
 
 export class WorkflowRegistry {
   private workflows = new Map<string, WorkflowConfig>();
@@ -47,10 +49,13 @@ export class WorkflowRegistry {
         return;
       }
 
-      // Execution wired in Step 6 — placeholder 501 until then
-      res.status(501).json({
-        error: "Execution not yet wired",
-        workflow: config.name,
+      const adaptedInput = adaptToWorkflowInput(config, req.body as Record<string, unknown>);
+      const runId = enqueueWorkflow(config.name, adaptedInput);
+
+      res.status(202).json({
+        runId,
+        status: "queued",
+        pollUrl: `/api/${config.name}/runs/${runId}`,
       });
     });
   }
