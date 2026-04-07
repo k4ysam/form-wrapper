@@ -1,0 +1,82 @@
+import * as fs from "fs";
+import * as path from "path";
+import { Express, Request, Response } from "express";
+import { loadWorkflow } from "../workflow-loader/loader";
+import { validateRequestBody } from "../workflow-loader/validator";
+import { WorkflowConfig } from "../workflow-loader/types";
+
+export class WorkflowRegistry {
+  private workflows = new Map<string, WorkflowConfig>();
+  private app: Express;
+  private workflowsDir: string;
+
+  constructor(workflowsDir: string, app: Express) {
+    this.workflowsDir = path.resolve(workflowsDir);
+    this.app = app;
+  }
+
+  async load(): Promise<void> {
+    if (!fs.existsSync(this.workflowsDir)) {
+      console.log(`[registry] Workflows directory not found: ${this.workflowsDir}`);
+      return;
+    }
+
+    const files = fs.readdirSync(this.workflowsDir).filter((f) => f.endsWith(".yaml") || f.endsWith(".yml"));
+
+    for (const file of files) {
+      const filePath = path.join(this.workflowsDir, file);
+      try {
+        const config = await loadWorkflow(filePath);
+        this.workflows.set(config.name, config);
+        this.registerRoute(config);
+        console.log(`[registry] Loaded workflow: ${config.name} (${config.input.properties ? Object.keys(config.input.properties).length : 0} fields)`);
+      } catch (err) {
+        console.error(`[registry] Failed to load ${file}: ${(err as Error).message}`);
+      }
+    }
+
+    this.registerListRoutes();
+    console.log(`[registry] ${this.workflows.size} workflow(s) registered.`);
+  }
+
+  registerRoute(config: WorkflowConfig): void {
+    this.app.post(`/api/${config.name}`, (req: Request, res: Response) => {
+      const validation = validateRequestBody(config, req.body);
+      if (!validation.valid) {
+        res.status(400).json({ error: "Invalid request body", fields: validation.errors });
+        return;
+      }
+
+      // Execution wired in Step 6 — placeholder 501 until then
+      res.status(501).json({
+        error: "Execution not yet wired",
+        workflow: config.name,
+      });
+    });
+  }
+
+  private registerListRoutes(): void {
+    this.app.get("/api", (_req: Request, res: Response) => {
+      const list = Array.from(this.workflows.values()).map((c) => ({
+        name: c.name,
+        description: c.description,
+        inputSchema: c.input,
+      }));
+      res.json(list);
+    });
+
+    this.app.get("/api/:name/schema", (req: Request, res: Response) => {
+      const name = Array.isArray(req.params.name) ? req.params.name[0] : req.params.name;
+      const config = this.workflows.get(name);
+      if (!config) {
+        res.status(404).json({ error: `Workflow '${req.params.name}' not found` });
+        return;
+      }
+      res.json(config.input);
+    });
+  }
+
+  getWorkflow(name: string): WorkflowConfig | undefined {
+    return this.workflows.get(name);
+  }
+}
