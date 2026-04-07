@@ -7,6 +7,7 @@ import { WorkflowRunResult } from "./api/queue";
 import { WorkflowInput } from "./workflow/types";
 import { AuditLogger } from "./logger";
 import { loadCookies } from "./auth/cookie-store";
+import { detectStaleSelectors, StaleField } from "./discover/stale-detector";
 
 const WORKFLOWS_DIR = process.env.WORKFLOWS_DIR ?? "./workflows";
 
@@ -60,6 +61,18 @@ export async function runWorkflow(
     }
   }
 
+  // Stale detection — before filling, warn on selectors that no longer exist in DOM
+  let staleFields: StaleField[] = [];
+  try {
+    staleFields = await detectStaleSelectors(page, config);
+    if (staleFields.length > 0) {
+      logger.record("workflow-runner", "stale_config:warn", { workflowName, fields: staleFields });
+      console.warn(`[workflow-runner] ${staleFields.length} stale selector(s) detected — continuing run`);
+    }
+  } catch {
+    // Stale detection is best-effort — never fail the run
+  }
+
   try {
     const summary = await runOrchestrator(page, adaptedInput);
     logger.record("workflow-runner", "workflow:complete", { workflowName, runId, summary });
@@ -95,6 +108,7 @@ export async function runWorkflow(
       message,
       tiersUsed: extractTiersFromSummary(summary),
       durationMs: Date.now() - start,
+      staleFields: staleFields.length > 0 ? staleFields : undefined,
     };
     logger.record("workflow-runner", "workflow:result", { workflowName, ...result });
     return result;
