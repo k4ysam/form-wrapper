@@ -6,6 +6,7 @@ import { validateRequestBody } from "../workflow-loader/validator";
 import { adaptToWorkflowInput } from "../workflow-loader/adapter";
 import { WorkflowConfig } from "../workflow-loader/types";
 import { enqueueWorkflow } from "./queue";
+import { getRunStatus, listRuns } from "./runs";
 
 export class WorkflowRegistry {
   private workflows = new Map<string, WorkflowConfig>();
@@ -74,10 +75,30 @@ export class WorkflowRegistry {
       const name = Array.isArray(req.params.name) ? req.params.name[0] : req.params.name;
       const config = this.workflows.get(name);
       if (!config) {
-        res.status(404).json({ error: `Workflow '${req.params.name}' not found` });
+        res.status(404).json({ error: `Workflow '${name}' not found` });
         return;
       }
       res.json(config.input);
+    });
+
+    this.app.get("/api/:name/runs", (req: Request, res: Response) => {
+      const name = Array.isArray(req.params.name) ? req.params.name[0] : req.params.name;
+      if (!this.workflows.has(name)) {
+        res.status(404).json({ error: `Workflow '${name}' not found` });
+        return;
+      }
+      res.json(listRuns(name));
+    });
+
+    this.app.get("/api/:name/runs/:runId", (req: Request, res: Response) => {
+      const name = Array.isArray(req.params.name) ? req.params.name[0] : req.params.name;
+      const runId = Array.isArray(req.params.runId) ? req.params.runId[0] : req.params.runId;
+      const status = getRunStatus(name, runId);
+      if (!status) {
+        res.status(404).json({ error: `Run '${runId}' not found for workflow '${name}'` });
+        return;
+      }
+      res.json(status);
     });
   }
 
