@@ -5,6 +5,7 @@ import { crawlForm } from "../discover/crawler";
 import { buildWorkflowConfig } from "../discover/schema-builder";
 import { writeWorkflowYaml } from "../discover/yaml-writer";
 import { createServer } from "../api/server";
+import { runLoginFlow } from "../auth/login";
 
 const program = new Command();
 
@@ -50,9 +51,8 @@ program
   .command("login")
   .description("Authenticate to a workflow target site and save session cookies")
   .requiredOption("--workflow <name>", "Name of the workflow to authenticate for")
-  .action(() => {
-    console.log("not yet implemented");
-    process.exit(0);
+  .action(async (opts: { workflow: string }) => {
+    await runLoginFlow(opts.workflow);
   });
 
 program.parse(process.argv);

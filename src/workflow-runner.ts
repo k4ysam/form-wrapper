@@ -6,6 +6,7 @@ import { adaptToWorkflowInput } from "./workflow-loader/adapter";
 import { WorkflowRunResult } from "./api/queue";
 import { WorkflowInput } from "./workflow/types";
 import { AuditLogger } from "./logger";
+import { loadCookies } from "./auth/cookie-store";
 
 const WORKFLOWS_DIR = process.env.WORKFLOWS_DIR ?? "./workflows";
 
@@ -33,6 +34,31 @@ export async function runWorkflow(
   const adaptedInput: WorkflowInput = adaptToWorkflowInput(config, requestBody);
 
   const { page, context } = await createSession(config.url, { headed: false });
+
+  // Load cookies if auth strategy is cookie_jar
+  if (config.auth?.strategy === "cookie_jar") {
+    const cookies = await loadCookies(workflowName);
+    if (cookies) {
+      await context.addCookies(cookies);
+      await page.reload();
+      logger.record("workflow-runner", "auth:cookies_loaded", { workflowName, count: cookies.length });
+    } else {
+      logger.record("workflow-runner", "auth:cookies_missing", { workflowName });
+    }
+  }
+
+  // Read CSRF token from DOM if csrf_selector is configured
+  if (config.auth?.csrf_selector) {
+    const csrfToken = await page.evaluate((sel: string) => {
+      const el = document.querySelector<HTMLInputElement>(sel);
+      return el?.value ?? null;
+    }, config.auth.csrf_selector);
+    if (csrfToken) {
+      logger.record("workflow-runner", "auth:csrf_read", { workflowName });
+      // Token available for injection into submit — stored in adaptedInput extension point
+      (adaptedInput as Record<string, unknown>)["_csrfToken"] = csrfToken;
+    }
+  }
 
   try {
     const summary = await runOrchestrator(page, adaptedInput);
