@@ -5,6 +5,7 @@ import { loadWorkflow } from "./workflow-loader/loader";
 import { adaptToWorkflowInput } from "./workflow-loader/adapter";
 import { WorkflowRunResult } from "./api/queue";
 import { WorkflowInput } from "./workflow/types";
+import { AuditLogger } from "./logger";
 
 const WORKFLOWS_DIR = process.env.WORKFLOWS_DIR ?? "./workflows";
 
@@ -22,7 +23,11 @@ export async function runWorkflow(
   requestBody: Record<string, unknown>
 ): Promise<WorkflowRunResult> {
   const start = Date.now();
+  const runId = AuditLogger.createRunId();
+  const logger = new AuditLogger(runId);
   const filePath = path.join(WORKFLOWS_DIR, `${workflowName}.yaml`);
+
+  logger.record("workflow-runner", "workflow:start", { workflowName, runId });
 
   const config = await loadWorkflow(filePath);
   const adaptedInput: WorkflowInput = adaptToWorkflowInput(config, requestBody);
@@ -31,6 +36,7 @@ export async function runWorkflow(
 
   try {
     const summary = await runOrchestrator(page, adaptedInput);
+    logger.record("workflow-runner", "workflow:complete", { workflowName, runId, summary });
 
     // Check success_selector from the submit section if defined
     const submitSection = config.sections.find((s) => s.type === "submit");
@@ -57,16 +63,19 @@ export async function runWorkflow(
       }
     }
 
-    return {
-      runId: workflowName,
+    const result: WorkflowRunResult = {
+      runId,
       status,
       message,
       tiersUsed: extractTiersFromSummary(summary),
       durationMs: Date.now() - start,
     };
+    logger.record("workflow-runner", "workflow:result", { workflowName, ...result });
+    return result;
   } catch (err) {
+    logger.record("workflow-runner", "workflow:error", { workflowName, error: (err as Error).message });
     return {
-      runId: workflowName,
+      runId,
       status: "failed",
       message: (err as Error).message,
       tiersUsed: [],
