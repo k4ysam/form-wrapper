@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { crawlForm } from "../discover/crawler";
 
 const program = new Command();
 
@@ -15,9 +16,9 @@ program
   .option("--headed", "Run browser in headed mode", false)
   .option("--overwrite", "Overwrite existing workflow file", false)
   .option("--merge", "Merge new fields into existing workflow file", false)
-  .action(() => {
-    console.log("not yet implemented");
-    process.exit(0);
+  .action(async (opts: { url: string; out: string; headed: boolean; overwrite: boolean; merge: boolean }) => {
+    const result = await crawlForm(opts.url, { headed: opts.headed });
+    console.log(JSON.stringify(result, null, 2));
   });
 
 program
