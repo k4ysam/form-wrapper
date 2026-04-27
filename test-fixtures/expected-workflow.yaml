@@ -1,0 +1,207 @@
+version: "1"
+name: conference-registration
+description: "DevConf 2026 registration — form-api golden test fixture"
+url: "http://localhost:8080"
+discovered: complete
+
+# Step structure: this is a 3-page wizard form
+# Pages are shown/hidden via JS (display:none). Crawler must click Next to advance.
+
+input:
+  type: object
+  required: [fullName, email, birthdate, track, contactPreference, termsAgreed]
+  properties:
+    # Step 1
+    fullName:         { type: string }
+    email:            { type: string, format: email }
+    phone:            { type: string }
+    nickname:         { type: string }
+    birthdate:        { type: string, format: date }
+    age:              { type: number }
+    # Step 2
+    track:            { type: string, enum: [frontend, backend, devops, ai-ml] }
+    dietaryNeeds:     { type: string }
+    tshirtSize:       { type: string, enum: [xs, s, m, l, xl, xxl] }
+    specialRequests:  { type: string }
+    accessibilityNeeds: { type: string }
+    contactPreference: { type: string, enum: [email, phone, sms] }
+    newsletter:       { type: string }
+    interests:        { type: array, items: { type: string } }
+    # Step 3
+    termsAgreed:      { type: string }
+
+sections:
+
+  # ── Step 1: Personal Details ────────────────────────────────────────────
+  - id: step_1_personal_details
+    fields:
+      - id: fullName
+        selector: "[name='fullName']"
+        aria_label: null
+        label: "Full Name"
+        type: text
+        required: true
+        dispatch_events: [blur]         # has onblur JS validation
+
+      - id: email
+        selector: "[name='email']"
+        aria_label: null
+        label: "Email Address"
+        type: email
+        required: true
+        dispatch_events: [blur]         # has onblur JS validation
+
+      - id: phone
+        selector: "[name='phone']"
+        aria_label: "Phone Number"      # aria-label is the ONLY label — no <label> element
+        label: null
+        type: tel
+        required: false
+        dispatch_events: [change]       # has onchange JS validation
+
+      - id: nickname
+        selector: "[name='nickname']"
+        aria_label: null
+        label: null
+        placeholder: "Preferred nickname"  # placeholder-only: no label, no aria-label
+        type: text
+        required: false
+
+      - id: birthdate
+        selector: "[name='birthdate']"
+        aria_label: null
+        label: "Date of Birth"
+        type: date
+        required: true
+
+      - id: age
+        selector: "[name='age']"
+        aria_label: null
+        label: "Age"
+        type: number
+        required: false
+        dispatch_events: [change]       # has onchange JS validation
+
+  # ── Step 2: Event Preferences ────────────────────────────────────────────
+  # Note: accordion sections must be expanded before fields are interactable
+
+  - id: step_2_session_prefs
+    accordion: true
+    accordion_trigger: "[data-accordion='session-prefs']"
+    fields:
+      - id: track
+        selector: "[name='track']"
+        label: "Preferred Track"
+        type: select
+        required: true
+        options:
+          - { value: "frontend",  label: "Frontend" }
+          - { value: "backend",   label: "Backend"  }
+          - { value: "devops",    label: "DevOps"   }
+          - { value: "ai-ml",     label: "AI/ML"    }
+
+      - id: dietaryNeeds
+        selector: "[name='dietaryNeeds']"
+        label: "Dietary Requirements"
+        type: select
+        required: false
+        # optgroups detected — options extracted across all optgroup children
+        options:
+          - { value: "standard",    label: "Standard",    group: "Meat-Based"  }
+          - { value: "halal",       label: "Halal",        group: "Meat-Based"  }
+          - { value: "kosher",      label: "Kosher",       group: "Meat-Based"  }
+          - { value: "vegetarian",  label: "Vegetarian",   group: "Plant-Based" }
+          - { value: "vegan",       label: "Vegan",        group: "Plant-Based" }
+
+      - id: tshirtSize
+        selector: "[name='tshirtSize']"
+        label: "T-Shirt Size"
+        type: select
+        required: false
+        options:
+          - { value: "xs",  label: "XS"  }
+          - { value: "s",   label: "S"   }
+          - { value: "m",   label: "M"   }
+          - { value: "l",   label: "L"   }
+          - { value: "xl",  label: "XL"  }
+          - { value: "xxl", label: "XXL" }
+
+      - id: specialRequests
+        selector: "[name='specialRequests']"
+        label: "Special Requests"
+        type: textarea
+        required: false
+
+  - id: step_2_accessibility
+    accordion: true
+    accordion_trigger: "[data-accordion='accessibility']"
+    fields:
+      - id: accessibilityNeeds
+        selector: "[name='accessibilityNeeds']"
+        aria_label: "Accessibility Requirements"   # aria-label only (no visible label)
+        label: null
+        type: textarea
+        required: false
+
+      - id: contactPreference
+        selector: "[name='contactPreference']"
+        label: "Contact Preference"
+        type: radio
+        required: true
+        options:
+          - { value: "email", label: "Email" }
+          - { value: "phone", label: "Phone" }
+          - { value: "sms",   label: "SMS"   }
+
+      - id: newsletter
+        selector: "[name='newsletter']"
+        label: "Subscribe to newsletter"
+        type: checkbox
+        required: false
+
+      - id: interests
+        selector: "[name='interests']"
+        label: "Interests"
+        type: checkbox
+        required: false
+        options:
+          - { value: "workshops",  label: "Workshops"  }
+          - { value: "networking", label: "Networking" }
+          - { value: "keynotes",   label: "Keynotes"   }
+
+      - id: legacyField
+        selector: "[name='legacyField']"
+        label: null
+        aria_label: null
+        placeholder: null
+        type: text
+        required: false
+        # WARNING: no label, no aria-label, no placeholder — completely unlabeled field
+
+      - id: referralCode
+        selector: "[name='referralCode']"
+        label: "Referral Code"
+        type: text
+        required: false
+        disabled: true
+        unsupported: true               # disabled fields should be flagged
+
+  # ── Step 3: Review & Submit ──────────────────────────────────────────────
+  - id: step_3_submit
+    fields:
+      - id: termsAgreed
+        selector: "[name='termsAgreed']"
+        label: "I agree to the terms and conditions"
+        type: checkbox
+        required: true
+
+  - id: submit
+    type: submit
+    selector: "[type='submit']"
+    success_selector: "#success-confirmation"   # div that appears after successful submit
+    success_selector_alt: ".confirmation-message"
+    timeout_ms: 5000
+
+recovery:
+  tiers: [name_attr, aria_label, llm_locate]
+  llm_budget: 4

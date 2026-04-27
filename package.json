@@ -8,7 +8,8 @@
     "trigger": "ts-node ./src/api/trigger.ts",
     "cron": "ts-node ./src/api/cron.ts",
     "test:scenarios": "ts-node ./src/tests/runner.ts",
-    "form-api": "ts-node src/cli/index.ts"
+    "form-api": "ts-node src/cli/index.ts",
+    "test:serve": "node test-fixtures/serve.js"
   },
   "keywords": [],
   "author": "",

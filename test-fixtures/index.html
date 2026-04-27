@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conference Registration — form-api Test Fixture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fa;
+      color: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      width: 100%;
+      max-width: 640px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      padding: 1.75rem 2rem;
+    }
+
+    .card-header h1 { font-size: 1.5rem; font-weight: 700; }
+    .card-header p  { font-size: 0.9rem; opacity: 0.85; margin-top: 0.25rem; }
+
+    .step-indicators {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+      transition: background 0.2s;
+    }
+    .step-dot.active  { background: #fff; color: #4f46e5; }
+    .step-dot.done    { background: rgba(255,255,255,0.6); color: #4f46e5; }
+
+    .card-body { padding: 2rem; }
+
+    .step { display: none; }
+    .step.active { display: block; }
+
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4f46e5;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .field-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.4rem;
+    }
+
+    label .required-star { color: #ef4444; margin-left: 2px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.6rem 0.875rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #1a1a2e;
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+    }
+
+    input:disabled, select:disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    .field-error {
+      display: none;
+      font-size: 0.8rem;
+      color: #ef4444;
+      margin-top: 0.3rem;
+    }
+    .field-error.visible { display: block; }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Accordion */
+    .accordion {
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .accordion-trigger {
+      width: 100%;
+      background: #f9fafb;
+      border: none;
+      padding: 0.875rem 1rem;
+      text-align: left;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .accordion-trigger:hover { background: #f3f4f6; }
+
+    .accordion-trigger .chevron {
+      width: 16px; height: 16px;
+      transition: transform 0.2s;
+      color: #9ca3af;
+    }
+    .accordion-trigger[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content {
+      display: none;
+      padding: 1.25rem 1rem;
+      border-top: 1.5px solid #e5e7eb;
+    }
+    .accordion-content.open { display: block; }
+
+    /* Radio + Checkbox */
+    .radio-group, .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .radio-option, .checkbox-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #374151;
+      cursor: pointer;
+    }
+
+    .radio-option input, .checkbox-option input {
+      width: auto;
+      margin: 0;
+    }
+
+    .fieldset-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.4rem;
+    }
+
+    /* Navigation buttons */
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: #4f46e5;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #4338ca; }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1.5px solid #d1d5db;
+    }
+    .btn-secondary:hover { background: #e5e7eb; }
+
+    .btn-submit {
+      background: #059669;
+      color: #fff;
+      width: 100%;
+    }
+    .btn-submit:hover { background: #047857; }
+    .btn-submit:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    /* Summary */
+    .summary-box {
+      background: #f9fafb;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.875rem;
+      color: #374151;
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+    .summary-box strong { color: #1a1a2e; }
+
+    /* Success */
+    #success-confirmation {
+      display: none;
+      background: #ecfdf5;
+      border: 2px solid #059669;
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    #success-confirmation .confirmation-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    #success-confirmation h2 {
+      color: #065f46;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #success-confirmation p {
+      color: #047857;
+      font-size: 0.9rem;
+    }
+
+    #success-confirmation .ref-number {
+      display: inline-block;
+      margin-top: 0.75rem;
+      background: #d1fae5;
+      color: #065f46;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0.35rem 1rem;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Unlabeled field note */
+    .field-note {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <h1>Conference Registration</h1>
+    <p>DevConf 2026 — form-api stress test fixture</p>
+    <div class="step-indicators">
+      <div class="step-dot active" id="dot-1">1</div>
+      <div class="step-dot" id="dot-2">2</div>
+      <div class="step-dot" id="dot-3">3</div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <form id="registration-form" data-step="1" novalidate>
+
+      <!-- ===================== STEP 1: Personal Details ===================== -->
+      <div id="step-1" class="step active" data-step-index="1">
+        <div class="step-title">Step 1 of 3 — Personal Details</div>
+
+        <div class="field-row">
+          <!-- Standard label + name attr: primary selector strategy -->
+          <div class="field-group">
+            <label for="fullName">Full Name <span class="required-star">*</span></label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              required
+              placeholder="Jane Smith"
+            />
+            <span class="field-error" id="fullName-error">Name must be at least 2 characters</span>
+          </div>
+
+          <!-- Email type detection -->
+          <div class="field-group">
+            <label for="email">Email Address <span class="required-star">*</span></label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="jane@example.com"
+            />
+            <span class="field-error" id="email-error">Please enter a valid email address</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <!-- aria-label only: no visible <label>, only aria-label attribute -->
+          <div class="field-group">
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              aria-label="Phone Number"
+              placeholder="e.g. 0412345678"
+            />
+            <span class="field-note">Phone (aria-label only — no visible label)</span>
+            <span class="field-error" id="phone-error">Phone must be at least 10 digits</span>
+          </div>
+
+          <!-- Placeholder only: no label, no aria-label -->
+          <div class="field-group">
+            <input
+              type="text"
+              id="nickname"
+              name="nickname"
+              placeholder="Preferred nickname"
+            />
+            <span class="field-note">Nickname (placeholder only — no label, no aria-label)</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <!-- Date type detection -->
+          <div class="field-group">
+            <label for="birthdate">Date of Birth <span class="required-star">*</span></label>
+            <input
+              type="date"
+              id="birthdate"
+              name="birthdate"
+              required
+            />
+          </div>
+
+          <!-- Number type detection -->
+          <div class="field-group">
+            <label for="age">Age</label>
+            <input
+              type="number"
+              id="age"
+              name="age"
+              min="1"
+              max="120"
+              placeholder="Your age"
+            />
+            <span class="field-error" id="age-error">Age must be between 1 and 120</span>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <span></span>
+          <button type="button" class="btn btn-primary btn-next">Next &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ===================== STEP 2: Event Preferences ===================== -->
+      <div id="step-2" class="step" data-step-index="2">
+        <div class="step-title">Step 2 of 3 — Event Preferences</div>
+
+        <!-- Accordion A: Session Preferences -->
+        <div class="accordion">
+          <button
+            type="button"
+            class="accordion-trigger"
+            data-accordion="session-prefs"
+            aria-expanded="false"
+            aria-controls="session-prefs-content"
+          >
+            Session Preferences
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div id="session-prefs-content" class="accordion-content" role="region">
+
+            <!-- Flat select / dropdown -->
+            <div class="field-group">
+              <label for="track">Preferred Track <span class="required-star">*</span></label>
+              <select id="track" name="track" required>
+                <option value="">Select a track…</option>
+                <option value="frontend">Frontend</option>
+                <option value="backend">Backend</option>
+                <option value="devops">DevOps</option>
+                <option value="ai-ml">AI/ML</option>
+              </select>
+            </div>
+
+            <!-- Select with optgroups edge case -->
+            <div class="field-group">
+              <label for="dietaryNeeds">Dietary Requirements</label>
+              <select id="dietaryNeeds" name="dietaryNeeds">
+                <option value="">No preference</option>
+                <optgroup label="Meat-Based">
+                  <option value="standard">Standard</option>
+                  <option value="halal">Halal</option>
+                  <option value="kosher">Kosher</option>
+                </optgroup>
+                <optgroup label="Plant-Based">
+                  <option value="vegetarian">Vegetarian</option>
+                  <option value="vegan">Vegan</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!-- Simple select -->
+            <div class="field-group">
+              <label for="tshirtSize">T-Shirt Size</label>
+              <select id="tshirtSize" name="tshirtSize">
+                <option value="">Select size…</option>
+                <option value="xs">XS</option>
+                <option value="s">S</option>
+                <option value="m">M</option>
+                <option value="l">L</option>
+                <option value="xl">XL</option>
+                <option value="xxl">XXL</option>
+              </select>
+            </div>
+
+            <!-- Textarea -->
+            <div class="field-group">
+              <label for="specialRequests">Special Requests</label>
+              <textarea id="specialRequests" name="specialRequests" placeholder="Any other session preferences…"></textarea>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Accordion B: Accessibility & Contact -->
+        <div class="accordion">
+          <button
+            type="button"
+            class="accordion-trigger"
+            data-accordion="accessibility"
+            aria-expanded="false"
+            aria-controls="accessibility-content"
+          >
+            Accessibility &amp; Contact
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div id="accessibility-content" class="accordion-content" role="region">
+
+            <!-- aria-label on textarea -->
+            <div class="field-group">
+              <textarea
+                id="accessibilityNeeds"
+                name="accessibilityNeeds"
+                aria-label="Accessibility Requirements"
+                placeholder="e.g. wheelchair access, hearing loop…"
+              ></textarea>
+              <span class="field-note">Accessibility needs (aria-label only — no visible label)</span>
+            </div>
+
+            <!-- Radio button group -->
+            <div class="field-group">
+              <div class="fieldset-label">Contact Preference <span class="required-star">*</span></div>
+              <fieldset style="border:none; padding:0;">
+                <legend style="display:none">Contact Preference</legend>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" name="contactPreference" value="email" required /> Email
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="contactPreference" value="phone" /> Phone
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="contactPreference" value="sms" /> SMS
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Single checkbox -->
+            <div class="field-group">
+              <label class="checkbox-option">
+                <input type="checkbox" id="newsletter" name="newsletter" value="yes" />
+                Subscribe to newsletter
+              </label>
+            </div>
+
+            <!-- Checkbox group via fieldset/legend -->
+            <div class="field-group">
+              <div class="fieldset-label">Interests</div>
+              <fieldset style="border:none; padding:0;">
+                <legend style="display:none">Interests</legend>
+                <div class="checkbox-group">
+                  <label class="checkbox-option">
+                    <input type="checkbox" name="interests" value="workshops" /> Workshops
+                  </label>
+                  <label class="checkbox-option">
+                    <input type="checkbox" name="interests" value="networking" /> Networking
+                  </label>
+                  <label class="checkbox-option">
+                    <input type="checkbox" name="interests" value="keynotes" /> Keynotes
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Edge case: completely unlabeled field (no label, no aria-label, no placeholder) -->
+            <div class="field-group">
+              <input type="text" id="legacyField" name="legacyField" />
+              <span class="field-note">legacyField — no label, no aria-label, no placeholder (edge case)</span>
+            </div>
+
+            <!-- Edge case: disabled field -->
+            <div class="field-group">
+              <label for="referralCode">Referral Code</label>
+              <input
+                type="text"
+                id="referralCode"
+                name="referralCode"
+                disabled
+                value="AUTO-POPULATED"
+              />
+              <span class="field-note">Disabled field — should be flagged as unsupported or skipped</span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn btn-secondary btn-prev">&larr; Back</button>
+          <button type="button" class="btn btn-primary btn-next">Next &rarr;</button>
+        </div>
+      </div>
+
+      <!-- ===================== STEP 3: Review & Submit ===================== -->
+      <div id="step-3" class="step" data-step-index="3">
+        <div class="step-title">Step 3 of 3 — Review &amp; Submit</div>
+
+        <div class="summary-box" id="summary-box">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Required checkbox before submit -->
+        <div class="field-group">
+          <label class="checkbox-option">
+            <input type="checkbox" id="termsAgreed" name="termsAgreed" value="yes" required />
+            I agree to the <a href="#" style="color:#4f46e5">terms and conditions</a>
+            <span class="required-star">*</span>
+          </label>
+        </div>
+
+        <div class="btn-row" style="flex-direction: column; gap: 0.75rem;">
+          <button type="submit" id="submit-btn" class="btn btn-submit">
+            Submit Registration
+          </button>
+          <button type="button" class="btn btn-secondary btn-prev">&larr; Back</button>
+        </div>
+
+        <!-- Success confirmation — this is the success_selector target -->
+        <div id="success-confirmation" class="confirmation-message" style="display:none; margin-top: 1.5rem;">
+          <div class="confirmation-icon">&#10003;</div>
+          <h2>Registration Submitted!</h2>
+          <p>Your registration has been received and confirmed.</p>
+          <div class="ref-number">REF: REG-2026-12345</div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('registration-form');
+
+  // ── Multi-step navigation ────────────────────────────────────────────────
+  let currentStep = 1;
+  const totalSteps = 3;
+
+  function showStep(n) {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+
+    // Update step dots
+    for (let i = 1; i <= totalSteps; i++) {
+      const dot = document.getElementById('dot-' + i);
+      dot.classList.remove('active', 'done');
+      if (i === n)    dot.classList.add('active');
+      if (i < n)      dot.classList.add('done');
+    }
+
+    currentStep = n;
+
+    if (n === 3) buildSummary();
+  }
+
+  document.querySelectorAll('.btn-next').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentStep < totalSteps) showStep(currentStep + 1);
+    });
+  });
+
+  document.querySelectorAll('.btn-prev').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentStep > 1) showStep(currentStep - 1);
+    });
+  });
+
+  // ── Accordion toggle ─────────────────────────────────────────────────────
+  document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const expanded = trigger.getAttribute('aria-expanded') === 'true';
+      const contentId = trigger.getAttribute('aria-controls');
+      const content = document.getElementById(contentId);
+
+      trigger.setAttribute('aria-expanded', String(!expanded));
+      content.classList.toggle('open', !expanded);
+    });
+  });
+
+  // ── JS Validation (fires on blur/change — tests dispatch_events detection) ─
+  function showError(fieldId, show) {
+    const el = document.getElementById(fieldId + '-error');
+    if (el) el.classList.toggle('visible', show);
+  }
+
+  // fullName: blur validation
+  document.getElementById('fullName').addEventListener('blur', function () {
+    showError('fullName', this.value.trim().length > 0 && this.value.trim().length < 2);
+  });
+
+  // email: blur validation
+  document.getElementById('email').addEventListener('blur', function () {
+    showError('email', this.value.trim().length > 0 && !this.value.includes('@'));
+  });
+
+  // phone: change validation
+  document.getElementById('phone').addEventListener('change', function () {
+    const digits = this.value.replace(/\D/g, '');
+    showError('phone', this.value.trim().length > 0 && digits.length < 10);
+  });
+
+  // age: change validation
+  document.getElementById('age').addEventListener('change', function () {
+    const v = parseInt(this.value, 10);
+    showError('age', this.value.trim().length > 0 && (isNaN(v) || v < 1 || v > 120));
+  });
+
+  // ── Summary builder ──────────────────────────────────────────────────────
+  function buildSummary() {
+    const get = id => {
+      const el = document.getElementById(id);
+      return el ? (el.value || '—') : '—';
+    };
+
+    const contactRadio = document.querySelector('input[name="contactPreference"]:checked');
+    const interests = [...document.querySelectorAll('input[name="interests"]:checked')]
+      .map(c => c.value).join(', ') || '—';
+
+    document.getElementById('summary-box').innerHTML = `
+      <strong>Name:</strong> ${get('fullName')}<br>
+      <strong>Email:</strong> ${get('email')}<br>
+      <strong>Phone:</strong> ${get('phone') || '—'}<br>
+      <strong>Birth Date:</strong> ${get('birthdate')}<br>
+      <strong>Track:</strong> ${get('track')}<br>
+      <strong>Dietary:</strong> ${get('dietaryNeeds') || '—'}<br>
+      <strong>T-Shirt:</strong> ${get('tshirtSize') || '—'}<br>
+      <strong>Contact via:</strong> ${contactRadio ? contactRadio.value : '—'}<br>
+      <strong>Interests:</strong> ${interests}
+    `;
+  }
+
+  // ── Submit handler ───────────────────────────────────────────────────────
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const terms = document.getElementById('termsAgreed');
+    if (!terms.checked) {
+      terms.focus();
+      return;
+    }
+
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').textContent = 'Submitting…';
+
+    // Simulate async submission
+    setTimeout(() => {
+      document.getElementById('success-confirmation').style.display = 'block';
+      document.getElementById('submit-btn').style.display = 'none';
+    }, 800);
+  });
+</script>
+
+</body>
+</html>
