@@ -43,22 +43,39 @@ export class WorkflowRegistry {
   }
 
   registerRoute(config: WorkflowConfig): void {
-    this.app.post(`/api/${config.name}`, (req: Request, res: Response) => {
-      const validation = validateRequestBody(config, req.body);
+    const { name } = config;
+    this.app.post(`/api/${name}`, (req: Request, res: Response) => {
+      // Look up config at request time so registerDynamic updates take effect immediately
+      const current = this.workflows.get(name);
+      if (!current) {
+        res.status(404).json({ error: `Workflow '${name}' not found` });
+        return;
+      }
+
+      const validation = validateRequestBody(current, req.body);
       if (!validation.valid) {
         res.status(400).json({ error: "Invalid request body", fields: validation.errors });
         return;
       }
 
-      const adaptedInput = adaptToWorkflowInput(config, req.body as Record<string, unknown>);
-      const runId = enqueueWorkflow(config.name, adaptedInput);
+      const adaptedInput = adaptToWorkflowInput(current, req.body as Record<string, unknown>);
+      const runId = enqueueWorkflow(current.name, adaptedInput);
 
       res.status(202).json({
         runId,
         status: "queued",
-        pollUrl: `/api/${config.name}/runs/${runId}`,
+        pollUrl: `/api/${current.name}/runs/${runId}`,
       });
     });
+  }
+
+  registerDynamic(config: WorkflowConfig): void {
+    const isNew = !this.workflows.has(config.name);
+    this.workflows.set(config.name, config);
+    if (isNew) {
+      // Route only registered once — handler reads from map at request time
+      this.registerRoute(config);
+    }
   }
 
   private registerListRoutes(): void {
