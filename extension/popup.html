@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>form-api</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">form-api</span>
+      <span class="tab-url" id="tab-url"></span>
+    </div>
+    <button class="icon-btn" id="settings-btn" title="Server settings" aria-label="Settings">⚙</button>
+  </header>
+
+  <!-- ── Server settings panel (hidden by default) ──────────────── -->
+  <div class="settings-panel hidden" id="settings-panel">
+    <label class="settings-label" for="server-url-input">Server URL</label>
+    <div class="settings-row">
+      <input type="text" id="server-url-input" class="text-input" placeholder="http://localhost:3000" />
+      <button class="btn btn-sm btn-secondary" id="save-server-btn">Save</button>
+    </div>
+  </div>
+
+  <!-- ── Error banner ───────────────────────────────────────────── -->
+  <div class="error-banner hidden" id="error-banner">
+    <span id="error-msg"></span>
+    <button class="error-retry" id="error-retry">Retry</button>
+  </div>
+
+  <!-- ── VIEW: Discovery ────────────────────────────────────────── -->
+  <div class="view" id="view-discover">
+    <div class="section">
+      <button class="btn btn-primary btn-full" id="discover-btn">
+        <span class="btn-icon">⊕</span> Discover Fields
+      </button>
+    </div>
+
+    <!-- Field list (shown after discovery) -->
+    <div class="hidden" id="fields-section">
+      <div class="section-header">
+        <span id="fields-count"></span>
+        <span class="multi-step-badge hidden" id="multi-step-badge">multi-step</span>
+      </div>
+      <ul class="field-list" id="field-list"></ul>
+
+      <div class="section">
+        <label class="field-label" for="workflow-name-input">
+          Workflow name <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          id="workflow-name-input"
+          class="text-input"
+          placeholder="e.g. permit-application"
+        />
+        <p class="hint">Lowercase letters, numbers, hyphens only</p>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="save-btn">
+        Save to Server
+      </button>
+    </div>
+  </div>
+
+  <!-- ── VIEW: Trigger ──────────────────────────────────────────── -->
+  <div class="view hidden" id="view-trigger">
+    <div class="view-header">
+      <button class="back-btn" id="back-to-discover">← Back</button>
+      <span class="view-title" id="trigger-title"></span>
+    </div>
+    <div class="section">
+      <p class="hint">Fill in values and submit the form via the API.</p>
+    </div>
+    <form id="trigger-form" class="trigger-form" novalidate></form>
+    <div class="section">
+      <button class="btn btn-success btn-full" id="submit-run-btn">Submit Run</button>
+    </div>
+  </div>
+
+  <!-- ── VIEW: Status ───────────────────────────────────────────── -->
+  <div class="view hidden" id="view-status">
+    <div class="view-header">
+      <button class="back-btn" id="back-to-trigger">← New run</button>
+      <span class="view-title">Run Status</span>
+    </div>
+    <div class="status-card" id="status-card">
+      <div class="status-row">
+        <span class="status-label">Run ID</span>
+        <code class="run-id" id="run-id-display"></code>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Status</span>
+        <span class="status-badge" id="status-badge">queued</span>
+      </div>
+      <div class="status-row hidden" id="status-duration-row">
+        <span class="status-label">Duration</span>
+        <span id="status-duration"></span>
+      </div>
+      <div class="status-row hidden" id="status-tiers-row">
+        <span class="status-label">Tiers used</span>
+        <span id="status-tiers"></span>
+      </div>
+      <div class="status-message hidden" id="status-message"></div>
+      <div class="status-error hidden" id="status-error"></div>
+    </div>
+    <div class="section">
+      <div class="spinner hidden" id="poll-spinner">Polling…</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
